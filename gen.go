@@ -85,7 +85,7 @@ func (gen *myGenerator) Start() bool {
 	// 设定节流阀。 即是调用间隔时间
 	var throttle <-chan time.Time
 	if gen.lps > 0 {
-		interval := time.Duration(1e9/gen.lps)
+		interval := time.Duration(1e9 / gen.lps)
 		logger.Infof("Setting throttle (%v)...", interval)
 		throttle = time.Tick(interval)
 	}
@@ -109,7 +109,7 @@ func (gen *myGenerator) Start() bool {
 }
 
 // genLoad 会产生载荷并向承受方发送。
-func (gen *myGenerator) genLoad(throttle <-chan time.Time)  {
+func (gen *myGenerator) genLoad(throttle <-chan time.Time) {
 	for {
 		// 
 		select {
@@ -118,9 +118,9 @@ func (gen *myGenerator) genLoad(throttle <-chan time.Time)  {
 			return
 		default:
 		}
-		
+
 		gen.asyncCall()
-		
+
 		if gen.lps > 0 {
 			select {
 			case <-throttle:
@@ -183,8 +183,7 @@ func (gen *myGenerator) printIgnoredResult(result *lib.CallResult, cause string)
 // prepareStop 用于为停止载荷发生器做准备。
 func (gen *myGenerator) prepareToStop(ctxError error) {
 	logger.Infof("Prepare to stop load generator (cause: %s)...", ctxError)
-	atomic.CompareAndSwapUint32(
-		&gen.status, lib.STATUS_STARTED, lib.STATUS_STOPPING)
+	atomic.CompareAndSwapUint32(&gen.status, lib.STATUS_STARTED, lib.STATUS_STOPPING)
 	logger.Infof("Closing result channel...")
 	close(gen.resultCh)
 	atomic.StoreUint32(&gen.status, lib.STATUS_STOPPED)
@@ -206,12 +205,14 @@ func (gen *myGenerator) callOne(rawReq *lib.RawReq) *lib.RawResp {
 		rawResp = lib.RawResp{
 			ID:     rawReq.ID,
 			Err:    errors.New(errMsg),
-			Elapse: elapsedTime}
+			Elapse: elapsedTime,
+		}
 	} else {
 		rawResp = lib.RawResp{
 			ID:     rawReq.ID,
 			Resp:   resp,
-			Elapse: elapsedTime}
+			Elapse: elapsedTime,
+		}
 	}
 	return &rawResp
 }
@@ -232,7 +233,8 @@ func (gen *myGenerator) asyncCall() {
 				result := &lib.CallResult{
 					ID:   0,
 					Code: lib.RET_CODE_FATAL_CALL,
-					Msg:  errMsg}
+					Msg:  errMsg,
+				}
 				gen.sendResult(result)
 			}
 			gen.tickets.Return()
@@ -265,7 +267,8 @@ func (gen *myGenerator) asyncCall() {
 				Req:    rawReq,
 				Code:   lib.RET_CODE_ERROR_CALL,
 				Msg:    rawResp.Err.Error(),
-				Elapse: rawResp.Elapse}
+				Elapse: rawResp.Elapse,
+			}
 		} else {
 			result = gen.caller.CheckResp(rawReq, *rawResp)
 			result.Elapse = rawResp.Elapse
